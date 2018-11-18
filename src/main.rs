@@ -12,12 +12,15 @@ use actix_web::{
 
 struct AppState {
     template: tera::Tera, // <- store tera template in application state
+    name: String
 }
 
 fn index((state, _query): (State<AppState>, Query<HashMap<String, String>>),) -> Result<HttpResponse, Error> {
+    let mut ctx = tera::Context::new();
+    ctx.insert("appname", &state.name.to_owned());
     let s = state
         .template
-        .render("index.html", &tera::Context::new())
+        .render("index.html", &ctx)
         .map_err(|_| error::ErrorInternalServerError("Template error"))?;
     
     Ok(HttpResponse::Ok().content_type("text/html").body(s))
@@ -26,13 +29,14 @@ fn index((state, _query): (State<AppState>, Query<HashMap<String, String>>),) ->
 fn main() {
     ::std::env::set_var("RUST_LOG", "{{project-name}}=info");
     env_logger::init();
-    let sys = actix::System::new("{{project-name}}");
+    let appname = "{{project-name}}";
+    let sys = actix::System::new(appname);
 
-    server::new(|| {
+    server::new( move || {
         let tera =
             compile_templates!(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*"));
 
-        App::with_state(AppState{template: tera})
+        App::with_state(AppState{template: tera, name: appname.to_owned()})
             // enable logger
             .middleware(middleware::Logger::default())
             .resource("/", |r| r.method(http::Method::GET).with(index))
