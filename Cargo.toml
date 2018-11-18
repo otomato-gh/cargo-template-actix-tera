@@ -1,0 +1,10 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+authors = ["{{authors}}"]
+
+[dependencies]
+env_logger = "0.5"
+tera = "0.11.20"
+actix = "0.7"
+actix-web = "0.7"
